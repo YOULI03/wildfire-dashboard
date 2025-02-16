@@ -1,1 +1,1 @@
-web: gunicorn -w 4 -b 0.0.0.0:5000 dashboard.app:app
+web: gunicorn --bind :$PORT --workers 1 --threads 8 dashboard.app:app

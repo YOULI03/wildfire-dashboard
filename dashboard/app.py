@@ -1,3 +1,22 @@
+# wsgi.py
+
+import os
+import sys
+
+# Add the dashboard directory to the Python path so it can be imported.
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'dashboard')))
+
+from app import app
+from waitress import serve
+import os
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    serve(app, host='0.0.0.0', port=port)
+
+
+
+# app.py
 from flask import Flask, jsonify, send_from_directory
 import pandas as pd
 from datetime import datetime
@@ -6,43 +25,34 @@ import os
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import geopandas as gpd
-from flask import Flask
 from flask_cors import CORS
 
-import os
-port = int(os.environ.get("PORT", 8000))  # Default ke 8000 jika tidak ada PORT yang ditentukan
-app.run(host='0.0.0.0', port=port, debug=True)
-
 app = Flask(__name__, static_folder='static')
-CORS(app)  # Aktifkan CORS
-# titik api
-df = pd.read_csv("/app/DL_FIRE_J2V-C2_579277/fire_nrt_J2V-C2_579277.csv")
-df['acq_date'] = pd.to_datetime(df['acq_date'])  # Konversi ke datetime
+CORS(app)
 
-# daratan
-shapefile_daratan = "/app/County_Boundary/County_Boundary.shp"
-daratan_gdf = gpd.read_file(shapefile_daratan).to_crs("EPSG:4326")
+# Data loading (adjust paths if needed within the container)
+try:
+    df = pd.read_csv("/app/DL_FIRE_J2V-C2_579277/fire_nrt_J2V-C2_579277.csv")
+    df['acq_date'] = pd.to_datetime(df['acq_date'])
 
-# neighborhood
-shapefile_neighborhoods = "/app/LA_Times_Neighborhood_Boundaries-shp/8494cd42-db48-4af1-a215-a2c8f61e96a22020328-1-621do0.x5yiu.shp"
-neighborhoods_gdf = gpd.read_file(shapefile_neighborhoods).to_crs("EPSG:4326")
+    shapefile_daratan = "/app/County_Boundary/County_Boundary.shp"
+    daratan_gdf = gpd.read_file(shapefile_daratan).to_crs("EPSG:4326")
 
-# Filter hanya di Los Angeles 
-lat_min, lat_max = 33.7, 34.3
-lon_min, lon_max = -118.7, -118.2
-df = df[(df['latitude'] >= lat_min) & (df['latitude'] <= lat_max) & 
-        (df['longitude'] >= lon_min) & (df['longitude'] <= lon_max)]
+    shapefile_neighborhoods = "/app/LA_Times_Neighborhood_Boundaries-shp/8494cd42-db48-4af1-a215-a2c8f61e96a22020328-1-621do0.x5yiu.shp"
+    neighborhoods_gdf = gpd.read_file(shapefile_neighborhoods).to_crs("EPSG:4326")
 
-# Konversi dataframe ke GeoDataFrame
-fire_gdf = gpd.GeoDataFrame(df, 
-                            geometry=gpd.points_from_xy(df.longitude, df.latitude),
-                            crs="EPSG:4326")
+    lat_min, lat_max = 33.7, 34.3
+    lon_min, lon_max = -118.7, -118.2
+    df = df[(df['latitude'] >= lat_min) & (df['latitude'] <= lat_max) & 
+            (df['longitude'] >= lon_min) & (df['longitude'] <= lon_max)]
 
-# spatial join untuk hanya mengambil titik api di daratan
-fire_daratan = gpd.sjoin(fire_gdf, daratan_gdf, how="inner", predicate="within")
+    fire_gdf = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df.longitude, df.latitude), crs="EPSG:4326")
+    fire_daratan = gpd.sjoin(fire_gdf, daratan_gdf, how="inner", predicate="within")
+    fire_daratan = gpd.sjoin(fire_daratan, neighborhoods_gdf, how="left", predicate="within", rsuffix="_neigh")
 
-# spatial join dengan neighborhood untuk menambahkan informasi lokasi
-fire_daratan = gpd.sjoin(fire_daratan, neighborhoods_gdf, how="left", predicate="within", rsuffix="_neigh")
+except FileNotFoundError as e:
+    print(f"Error loading data: {e}. Make sure the paths are correct in the container.")
+    exit(1) # Exit if data files are missing
 
 
 @app.route('/')
@@ -51,10 +61,15 @@ def index():
 
 @app.route('/<path:path>')
 def serve_static(path):
-    if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
+    try:
         return send_from_directory(app.static_folder, path)
-    else:
-        return send_from_directory('static', 'index.html')
+    except FileNotFoundError:
+        return send_from_directory('static', 'index.html')  # Or return a 404
+
+# ... (rest of your route functions: process_fire_data, totalConfidence, get_total_confidence, get_dist_data, get_line_data, barh_chart_data, get_chart_data, get_fire_data) ...
+
+
+# Removed:  if __name__ == '__main__': app.run(debug=True)  # NO! Use gunicorn
 
 
 
@@ -282,6 +297,3 @@ def get_fire_data(date):
     map.save(full_map_path)
     return jsonify({"map_path": f"/{map_path}"})
 
-
-if __name__ == '__main__':
-    app.run(debug=True)
