@@ -22,13 +22,14 @@ CORS(app)
 
 # Data loading (adjust paths if needed within the container)
 try:
-    df = pd.read_csv("/app/DL_FIRE_J2V-C2_579277/fire_nrt_J2V-C2_579277.csv")
+    
+    df = pd.read_csv("/DL_FIRE_J2V-C2_579277/fire_nrt_J2V-C2_579277.csv")
     df['acq_date'] = pd.to_datetime(df['acq_date'])
 
-    shapefile_daratan = "/app/County_Boundary/County_Boundary.shp"
+    shapefile_daratan = "/County_Boundary/County_Boundary.shp"
     daratan_gdf = gpd.read_file(shapefile_daratan).to_crs("EPSG:4326")
 
-    shapefile_neighborhoods = "/app/LA_Times_Neighborhood_Boundaries-shp/8494cd42-db48-4af1-a215-a2c8f61e96a22020328-1-621do0.x5yiu.shp"
+    shapefile_neighborhoods = "/LA_Times_Neighborhood_Boundaries-shp/8494cd42-db48-4af1-a215-a2c8f61e96a22020328-1-621do0.x5yiu.shp"
     neighborhoods_gdf = gpd.read_file(shapefile_neighborhoods).to_crs("EPSG:4326")
 
     lat_min, lat_max = 33.7, 34.3
