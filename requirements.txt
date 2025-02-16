@@ -131,4 +131,3 @@ Werkzeug==3.0.6
 widgetsnbextension==4.0.13
 xyzservices==2025.1.0
 zipp==3.21.0
-gunicorn==23.0.0
