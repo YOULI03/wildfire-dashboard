@@ -9,7 +9,9 @@ import geopandas as gpd
 from flask import Flask
 from flask_cors import CORS
 
-
+import os
+port = int(os.environ.get("PORT", 8000))  # Default ke 8000 jika tidak ada PORT yang ditentukan
+app.run(host='0.0.0.0', port=port, debug=True)
 
 app = Flask(__name__, static_folder='static')
 CORS(app)  # Aktifkan CORS
