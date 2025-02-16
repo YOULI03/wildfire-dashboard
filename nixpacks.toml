@@ -2,11 +2,7 @@
 nixPkgs = ["python311"]
 
 [phases.build]
-cmds = [
-  "python3 -m ensurepip --default-pip",
-  "python3 -m pip install --upgrade pip",
-  "python3 -m pip install -r requirements.txt"
-]
+cmds = ["pip install -r requirements.txt"]
 
-[phases.start]
-cmd = "python3 dashboard/app.py"
+[start]
+cmd = "python dashboard/app.py"

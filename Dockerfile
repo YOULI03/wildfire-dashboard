@@ -1,16 +1,13 @@
+# Gunakan base image Python 3.11
+FROM python:3.11
 
-# Gunakan image Python yang sudah termasuk pip
-FROM python:3.11-slim
-
-# Set working directory di dalam container
+# Set working directory
 WORKDIR /app
 
-# Copy semua file proyek ke dalam container
+# Copy semua file ke container
 COPY . .
 
-# Pastikan pip tersedia dan install dependencies
-RUN apt-get update && apt-get install -y python3-pip
-RUN pip install --no-cache-dir --upgrade pip
+# Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Jalankan aplikasi
