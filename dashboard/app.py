@@ -6,23 +6,27 @@ import os
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import geopandas as gpd
-from flask import Flask
 from flask_cors import CORS
 
 
 
+
 app = Flask(__name__, static_folder='static')
-CORS(app)  # Aktifkan CORS
+CORS(app) 
+
 # titik api
-df = pd.read_csv(r"\DL_FIRE_J2V-C2_579277\fire_nrt_J2V-C2_579277.csv")
+df = pd.read_csv(os.path.join(os.getcwd(), 'DL_FIRE_J2V-C2_579277', 'fire_nrt_J2V-C2_579277.csv'))
 df['acq_date'] = pd.to_datetime(df['acq_date'])  # Konversi ke datetime
 
+
+
+
 # daratan
-shapefile_daratan = r"\County_Boundary\County_Boundary.shp"
+shapefile_daratan = os.path.join(os.getcwd(), 'County_Boundary', 'County_Boundary.shp')
 daratan_gdf = gpd.read_file(shapefile_daratan).to_crs("EPSG:4326")
 
 # neighborhood
-shapefile_neighborhoods = r"\LA_Times_Neighborhood_Boundaries-shp\8494cd42-db48-4af1-a215-a2c8f61e96a22020328-1-621do0.x5yiu.shp"
+shapefile_neighborhoods = os.path.join(os.getcwd(), 'LA_Times_Neighborhood_Boundaries-shp', '8494cd42-db48-4af1-a215-a2c8f61e96a22020328-1-621do0.x5yiu.shp')
 neighborhoods_gdf = gpd.read_file(shapefile_neighborhoods).to_crs("EPSG:4326")
 
 # Filter hanya di Los Angeles 
@@ -114,6 +118,7 @@ def get_total_confidence(date):
 
 
 
+@app.route('/data/dist/<date>')
 @app.route('/data/dist/<date>')
 def get_dist_data(date):
     global neighborhoods_gdf  
